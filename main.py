@@ -22,7 +22,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-gpuid', nargs=1, type=str, default='0') # python3 main.py -gpuid=0,1,2,3
 args = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid[0]
+print('GPU:')
 print(os.environ['CUDA_VISIBLE_DEVICES'])
+print('***********')
 
 # book keeping namings and code
 from settings import base_architecture, img_size, prototype_shape, num_classes, \
@@ -53,7 +55,7 @@ from settings import train_dir, test_dir, train_push_dir, \
 normalize = transforms.Normalize(mean=mean,
                                  std=std)
 
-num_workers = 2 # originally 4
+num_workers = 4 # originally 4
 
 # all datasets
 # train set
@@ -156,7 +158,7 @@ for epoch in range(num_train_epochs):
     accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                     class_specific=class_specific, log=log)
     save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'nopush', accu=accu,
-                                target_accu=0.70, log=log)
+                                target_accu=0.60, log=log)
 
     if epoch >= push_start and epoch in push_epochs:
         push.push_prototypes(
@@ -175,7 +177,7 @@ for epoch in range(num_train_epochs):
         accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                         class_specific=class_specific, log=log)
         save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'push', accu=accu,
-                                    target_accu=0.70, log=log)
+                                    target_accu=0.60, log=log)
 
         if prototype_activation_function != 'linear':
             tnt.last_only(model=ppnet_multi, log=log)
@@ -186,7 +188,7 @@ for epoch in range(num_train_epochs):
                 accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                                 class_specific=class_specific, log=log)
                 save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + '_' + str(i) + 'push', accu=accu,
-                                            target_accu=0.70, log=log)
+                                            target_accu=0.60, log=log)
    
 logclose()
 

@@ -1,19 +1,19 @@
-base_architecture = 'resnet18'
+base_architecture = 'resnet50_inat'
 img_size = 224
-prototype_shape = (30, 128, 1, 1)
-num_classes = 3
+num_classes = 22
+prototype_shape = (num_classes*10, 128, 1, 1) # first dimension needs to be a multiple of num_classes
 prototype_activation_function = 'log'
 add_on_layers_type = 'regular'
 
 experiment_run = '001'
 
-data_path = './datasets/iNat_3spec/'
-train_dir = data_path + 'train_Insecta_cropped_augmented/' 
-test_dir = data_path + 'val_Insecta_cropped/'
-train_push_dir = data_path + 'train_Insecta_cropped/'
-train_batch_size = 16
-test_batch_size = 4
-train_push_batch_size = 16
+data_path = '../../data/data_lstudio/'
+train_dir = data_path + 'Bees_Christian_bbox_train_aug/'
+test_dir = data_path + 'Bees_Christian_bbox_val/'
+train_push_dir = data_path + 'Bees_Christian_bbox_train/'
+train_batch_size = 64
+test_batch_size = 16
+train_push_batch_size = 64
 
 joint_optimizer_lrs = {'features': 1e-4,
                        'add_on_layers': 3e-3,
@@ -32,8 +32,8 @@ coefs = {
     'l1': 1e-4,
 }
 
-num_train_epochs = 10
-num_warm_epochs = 1
+num_train_epochs = 101
+num_warm_epochs = 5
 
-push_start = 2
-push_epochs = [i for i in range(num_train_epochs) if i % 2 == 0]
+push_start = 10
+push_epochs = [i for i in range(num_train_epochs) if i % 10 == 0]

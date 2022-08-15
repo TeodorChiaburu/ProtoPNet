@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
+import os, copy
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -263,6 +264,38 @@ def resnet50_features(pretrained=False, **kwargs):
         my_dict.pop('fc.weight')
         my_dict.pop('fc.bias')
         model.load_state_dict(my_dict, strict=False)
+    return model
+
+
+def resnet50_features_inat(pretrained=False, **kwargs):
+    """Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on Inaturalist2017
+    """
+    model = ResNet_features(Bottleneck, [3, 4, 6, 3], **kwargs)
+
+    if pretrained:
+        # use BBN pretrained weights of the conventional learning branch (from BBN.iNaturalist2017.res50.180epoch.best_model.pth)
+        # https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhou_BBN_Bilateral-Branch_Network_With_Cumulative_Learning_for_Long-Tailed_Visual_Recognition_CVPR_2020_paper.pdf
+        model_dict = torch.load(
+            os.path.join(model_dir, 'BBN.iNaturalist2017.res50.180epoch.best_model.pth'))
+        # rename last residual block from cb_block to layer4.2
+        new_model = copy.deepcopy(model_dict)
+        for k in model_dict.keys():
+            if k.startswith('module.backbone.cb_block'):
+                splitted = k.split('cb_block')
+                new_model['layer4.2' + splitted[-1]] = model_dict[k]
+                del new_model[k]
+            elif k.startswith('module.backbone.rb_block'):
+                del new_model[k]
+            elif k.startswith('module.backbone.'):
+                splitted = k.split('backbone.')
+                new_model[splitted[-1]] = model_dict[k]
+                del new_model[k]
+            elif k.startswith('module.classifier'):
+                del new_model[k]
+        # print(new_model.keys())
+        model.load_state_dict(new_model, strict=True)
     return model
 
 
