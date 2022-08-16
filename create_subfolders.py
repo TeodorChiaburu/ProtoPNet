@@ -25,7 +25,7 @@ classes = ['Bombus_lapidarius',
 'Sphecodes_albilabris',
 'Anthidium_manicatum']
 
-IMG_PATH = '../../data/data_lstudio/Bees_Christian_bbox_train/'
+IMG_PATH = '../../data/data_lstudio/Bees_Christian_bbox/'
 
 # Get jpg files
 jpg_files = glob.glob(IMG_PATH + '*.jpg')
@@ -49,5 +49,6 @@ for f in jpg_files:
     if cls in ['Bombus_cryptarum', 'Bombus_magnus', 'Bombus_terrestris']:
         cls = 'Bombus_lucorum'
 
-    # Cut and paste file in subfolder
+    # Cut and paste file in subfolder or copy it
     shutil.move(f, IMG_PATH + cls + '/' + file_name)
+    #shutil.copy(f, IMG_PATH + cls + '/' + file_name)

@@ -55,7 +55,7 @@ from settings import train_dir, test_dir, train_push_dir, \
 normalize = transforms.Normalize(mean=mean,
                                  std=std)
 
-num_workers = 4 # originally 4
+num_workers = 4
 
 # all datasets
 # train set
@@ -114,17 +114,23 @@ class_specific = True
 
 # define optimizer
 from settings import joint_optimizer_lrs, joint_lr_step_size
+
+# weighting of different training losses
+from settings import coefs
+
 joint_optimizer_specs = \
-[{'params': ppnet.features.parameters(), 'lr': joint_optimizer_lrs['features'], 'weight_decay': 1e-3}, # bias are now also being regularized
- {'params': ppnet.add_on_layers.parameters(), 'lr': joint_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
+[{'params': ppnet.features.parameters(), 'lr': joint_optimizer_lrs['features'], 'weight_decay': coefs['l1']}, # bias are now also being regularized
+ {'params': ppnet.add_on_layers.parameters(), 'lr': joint_optimizer_lrs['add_on_layers'], 'weight_decay': coefs['l1']},
  {'params': ppnet.prototype_vectors, 'lr': joint_optimizer_lrs['prototype_vectors']},
 ]
 joint_optimizer = torch.optim.Adam(joint_optimizer_specs)
-joint_lr_scheduler = torch.optim.lr_scheduler.StepLR(joint_optimizer, step_size=joint_lr_step_size, gamma=0.1)
+joint_lr_scheduler = torch.optim.lr_scheduler.StepLR(joint_optimizer,
+                                                     step_size=joint_lr_step_size,
+                                                     gamma=0.5) #0.1
 
 from settings import warm_optimizer_lrs
 warm_optimizer_specs = \
-[{'params': ppnet.add_on_layers.parameters(), 'lr': warm_optimizer_lrs['add_on_layers'], 'weight_decay': 1e-3},
+[{'params': ppnet.add_on_layers.parameters(), 'lr': warm_optimizer_lrs['add_on_layers'], 'weight_decay': coefs['l1']},
  {'params': ppnet.prototype_vectors, 'lr': warm_optimizer_lrs['prototype_vectors']},
 ]
 warm_optimizer = torch.optim.Adam(warm_optimizer_specs)
@@ -132,9 +138,6 @@ warm_optimizer = torch.optim.Adam(warm_optimizer_specs)
 from settings import last_layer_optimizer_lr
 last_layer_optimizer_specs = [{'params': ppnet.last_layer.parameters(), 'lr': last_layer_optimizer_lr}]
 last_layer_optimizer = torch.optim.Adam(last_layer_optimizer_specs)
-
-# weighting of different training losses
-from settings import coefs
 
 # number of training epochs, number of warm epochs, push start epoch, push epochs
 from settings import num_train_epochs, num_warm_epochs, push_start, push_epochs
@@ -158,7 +161,7 @@ for epoch in range(num_train_epochs):
     accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                     class_specific=class_specific, log=log)
     save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'nopush', accu=accu,
-                                target_accu=0.60, log=log)
+                                target_accu=0.70, log=log)
 
     if epoch >= push_start and epoch in push_epochs:
         push.push_prototypes(
@@ -177,18 +180,18 @@ for epoch in range(num_train_epochs):
         accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                         class_specific=class_specific, log=log)
         save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + 'push', accu=accu,
-                                    target_accu=0.60, log=log)
+                                    target_accu=0.70, log=log)
 
         if prototype_activation_function != 'linear':
             tnt.last_only(model=ppnet_multi, log=log)
-            for i in range(10): # originally 20
+            for i in range(20): # originally 20
                 log('iteration: \t{0}'.format(i))
                 _ = tnt.train(model=ppnet_multi, dataloader=train_loader, optimizer=last_layer_optimizer,
                               class_specific=class_specific, coefs=coefs, log=log)
                 accu = tnt.test(model=ppnet_multi, dataloader=test_loader,
                                 class_specific=class_specific, log=log)
                 save.save_model_w_condition(model=ppnet, model_dir=model_dir, model_name=str(epoch) + '_' + str(i) + 'push', accu=accu,
-                                            target_accu=0.60, log=log)
+                                            target_accu=0.70, log=log)
    
 logclose()
 
